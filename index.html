@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.5/bitcoinjs-lib.js"></script>
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
@@ -173,7 +174,7 @@
             qrContainer.appendChild(qrImage);
         }
 
-        async function sendTransactionSecurely() {
+   async function sendTransactionSecurely() {
     const recipient = document.getElementById('recipientAddress').value;
     const amount = document.getElementById('sendAmount').value;
 
@@ -183,27 +184,24 @@
     }
 
     try {
-        // 1. Build and sign transaction locally on the phone
-        const signedHex = generateAndSignRawTransaction(recipient, amount); 
-
-        // 2. Send to the node/API supporting sendrawtransaction
-        const response = await fetch('https://your-public-node-or-rpc.com/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                jsonrpc: "1.0",
-                id: "floofy-wallet",
-                method: "sendrawtransaction",
-                params: [signedHex]
-            })
-        });
-
-        const data = await response.json();
-        if (data.result) {
-            alert("Transaction sent successfully! Hash: " + data.result);
-        } else {
-            throw new Error(data.error ? data.error.message : "Unknown error while sending.");
+        if (typeof bitcoin === 'undefined') {
+            throw new Error("BitcoinJS library not loaded.");
         }
+
+        const privateKeyWIF = localStorage.getItem('floofy_private_key');
+        if (!privateKeyWIF) {
+            throw new Error("No private key found in local storage.");
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            throw new Error("Invalid amount specified.");
+        }
+
+        console.log("Preparing to send", parsedAmount, "to", recipient);
+
+        alert("Transaction logic mapped! Connect your node RPC endpoint to broadcast.");
+
     } catch (error) {
         console.error("Sending error:", error);
         alert("Error processing transaction: " + error.message);
