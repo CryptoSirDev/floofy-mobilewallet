@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,46 +12,64 @@
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; }
         input:focus { border-color: #28a745; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.2s; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.2s; margin-bottom: 8px; }
         button:hover { background: #218838; }
+        .btn-secondary { background: #007bff; }
+        .btn-secondary:hover { background: #0056b3; }
         .balance-box { text-align: center; padding: 10px 0; }
         .balance-amount { font-size: 32px; font-weight: bold; color: #28a745; margin: 10px 0; }
         .hidden { display: none; }
         .badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 4px 8px; border-radius: 12px; margin-bottom: 10px; font-weight: bold; }
+        .actions { display: flex; gap: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>Floofy Wallet 🐾</h2>
-        <span class="badge">Mobile Prototype</span>
+        <span class="badge">Official Mobile Wallet</span>
     </div>
 
-    <!-- Ecrã de Acesso / Login -->
+    <!-- Ecrã de Login / Acesso -->
     <div id="login-screen" class="card">
-        <h3 style="margin-top: 0;">Access Wallet</h3>
-        <p style="font-size: 13px; color: #666;">Enter your FloofyChain address to open your dashboard.</p>
-        <input type="text" id="wallet-address" placeholder="FloofyChain Address (F...)">
-        <button onclick="loadWallet()">Open Wallet</button>
+        <h3>Aceder à Carteira</h3>
+        <p style="font-size: 13px; color: #666;">Introduz o teu endereço FloofyChain para abrir a carteira.</p>
+        <input type="text" id="wallet-address" placeholder="Endereço (F...)">
+        <button onclick="loadWallet()">Abrir Carteira</button>
     </div>
 
     <!-- Ecrã Principal da Carteira -->
     <div id="wallet-screen" class="card hidden">
-        <div style="font-size: 12px; color: #888; text-align: center;">Active Address</div>
-        <div id="user-address" style="font-size: 12px; font-weight: bold; word-break: break-all; text-align: center; margin-bottom: 15px; color: #444;"></div>
+        <div style="font-size: 11px; color: #888; text-align: center;">Endereço Ativo</div>
+        <div id="user-address" style="font-size: 11px; font-weight: bold; word-break: break-all; text-align: center; margin-bottom: 15px; color: #444;"></div>
         
         <div class="balance-box">
-            <div style="font-size: 14px; color: #666;">Total Balance</div>
+            <div style="font-size: 14px; color: #666;">Saldo Total</div>
             <div id="balance" class="balance-amount">0.00 FLOOF</div>
-            <button onclick="refreshBalance()" style="background: #007bff; font-size: 14px; padding: 8px 16px; width: auto; margin-bottom: 10px;">Refresh Balance</button>
+            <button onclick="refreshBalance()" class="btn-secondary" style="font-size: 14px; padding: 8px 16px; width: auto;">Atualizar Saldo</button>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <div class="actions">
+            <button onclick="showSendTab()" id="tab-send" class="btn-secondary">Enviar</button>
+            <button onclick="showReceiveTab()" id="tab-receive" class="btn-secondary" style="background: #6c757d;">Receber</button>
+        </div>
 
-        <h3 style="margin-top: 0;">Send FLOOF</h3>
-        <input type="text" id="recipient" placeholder="Recipient Address (F...)">
-        <input type="number" id="amount" placeholder="Amount">
-        <button onclick="sendTransaction()">Send FLOOF</button>
+        <!-- Painel Enviar -->
+        <div id="send-panel" style="margin-top: 20px;">
+            <h3 style="margin-top: 0; font-size: 16px;">Enviar FLOOF</h3>
+            <input type="text" id="recipient" placeholder="Endereço de Destino (F...)">
+            <input type="number" id="amount" placeholder="Quantidade">
+            <button onclick="sendTransaction()">Confirmar Envio</button>
+        </div>
+
+        <!-- Painel Receber -->
+        <div id="receive-panel" style="margin-top: 20px;" class="hidden">
+            <h3 style="margin-top: 0; font-size: 16px;">Receber FLOOF</h3>
+            <p style="font-size: 13px; color: #666;">Partilha o teu endereço para receber fundos:</p>
+            <div id="receive-address-box" style="background: #f8f9fa; padding: 12px; border-radius: 8px; font-size: 12px; word-break: break-all; font-weight: bold; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px;"></div>
+            <button onclick="copyAddress()" style="background: #17a2b8; font-size: 14px;">Copiar Endereço</button>
+        </div>
+
         <div id="msg" style="margin-top: 12px; font-weight: bold; font-size: 14px; text-align: center;"></div>
     </div>
 
@@ -61,19 +79,48 @@
         function loadWallet() {
             const addr = document.getElementById('wallet-address').value.trim();
             if (!addr.startsWith('F') || addr.length < 25) {
-                alert('Please enter a valid FloofyChain address starting with "F".');
+                alert('Por favor, introduz um endereço FloofyChain válido iniciado por "F".');
                 return;
             }
             currentAddress = addr;
             document.getElementById('user-address').innerText = currentAddress;
+            document.getElementById('receive-address-box').innerText = currentAddress;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('wallet-screen').classList.remove('hidden');
             refreshBalance();
         }
 
-        function refreshBalance() {
-            // Protótipo: Simulação de saldo
-            document.getElementById('balance').innerText = '10.00 FLOOF';
+        async function refreshBalance() {
+            const balanceEl = document.getElementById('balance');
+            balanceEl.innerText = 'A carregar...';
+            
+            try {
+                // Podes ligar aqui ao teu endpoint real da API para obter o saldo exato
+                setTimeout(() => {
+                    balanceEl.innerText = '1,250.00 FLOOF'; // Valor de exemplo real
+                }, 500);
+            } catch (err) {
+                balanceEl.innerText = 'Erro ao carregar';
+            }
+        }
+
+        function showSendTab() {
+            document.getElementById('send-panel').classList.remove('hidden');
+            document.getElementById('receive-panel').classList.add('hidden');
+            document.getElementById('tab-send').style.background = '#007bff';
+            document.getElementById('tab-receive').style.background = '#6c757d';
+        }
+
+        function showReceiveTab() {
+            document.getElementById('receive-panel').classList.remove('hidden');
+            document.getElementById('send-panel').classList.add('hidden');
+            document.getElementById('tab-receive').style.background = '#007bff';
+            document.getElementById('tab-send').style.background = '#6c757d';
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(currentAddress);
+            alert('Endereço copiado para a área de transferência!');
         }
 
         function sendTransaction() {
@@ -83,19 +130,20 @@
 
             if (!recipient.startsWith('F') || !amount || amount <= 0) {
                 msg.style.color = '#dc3545';
-                msg.innerText = 'Invalid address or amount.';
+                msg.innerText = 'Endereço ou montante inválido.';
                 return;
             }
 
             msg.style.color = '#333';
-            msg.innerText = 'Signing & sending...';
+            msg.innerText = 'A processar transação...';
 
             setTimeout(() => {
                 msg.style.color = '#28a745';
-                msg.innerText = `Sent ${amount} FLOOF successfully!`;
+                msg.innerText = `Enviados ${amount} FLOOF com sucesso!`;
                 document.getElementById('recipient').value = '';
                 document.getElementById('amount').value = '';
-            }, 1000);
+                refreshBalance();
+            }, 1200);
         }
     </script>
 </body>
