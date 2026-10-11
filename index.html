@@ -183,10 +183,6 @@
     }
 
     try {
-        if (typeof bitcoin === 'undefined') {
-            throw new Error("BitcoinJS library not loaded.");
-        }
-
         const privateKeyWIF = localStorage.getItem('floofy_private_key');
         if (!privateKeyWIF) {
             throw new Error("No private key found in local storage.");
