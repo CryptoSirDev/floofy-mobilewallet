@@ -198,9 +198,36 @@
             throw new Error("Invalid amount specified.");
         }
 
-        console.log("Preparing to send", parsedAmount, "to", recipient);
+        const signedHex = "0100000001..."; 
 
-        alert("Transaction logic mapped! Connect your node RPC endpoint to broadcast.");
+        const rpcHost = "http://127.0.0.1:22555";
+        const rpcUser = "floofyadmin";
+        const rpcPass = "palpassegura123";
+
+        const credentials = btoa(`${rpcUser}:${rpcPass}`);
+
+        const response = await fetch(rpcHost, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+                'Authorization': `Basic ${credentials}`
+            },
+            body: JSON.stringify({
+                jsonrpc: "1.0",
+                id: "floofy-mobile-wallet",
+                method: "sendrawtransaction",
+                params: [signedHex]
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.result) {
+            alert("Transaction sent successfully! TXID: " + data.result);
+            refreshBalance();
+        } else {
+            throw new Error(data.error ? data.error.message : "Unknown error while broadcasting.");
+        }
 
     } catch (error) {
         console.error("Sending error:", error);
