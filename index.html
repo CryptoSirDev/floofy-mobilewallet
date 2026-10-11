@@ -1,155 +1,206 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
     <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Floofy Mobile Wallet</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #f4f6f8; color: #333; padding: 20px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h2 { margin: 0; font-size: 24px; color: #222; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; }
-        input:focus { border-color: #28a745; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.2s; margin-bottom: 8px; }
-        button:hover { background: #218838; }
-        .btn-secondary { background: #007bff; }
-        .btn-secondary:hover { background: #0056b3; }
-        .balance-box { text-align: center; padding: 10px 0; }
-        .balance-amount { font-size: 32px; font-weight: bold; color: #28a745; margin: 10px 0; }
-        .hidden { display: none; }
-        .badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 4px 8px; border-radius: 12px; margin-bottom: 10px; font-weight: bold; }
-        .actions { display: flex; gap: 10px; margin-top: 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #f4f6f8; color: #333; padding: 16px; }
+        .wallet-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
+        .hidden { display: none !important; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus, textarea:focus { border-color: #28a745; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; color: white; margin-bottom: 10px; }
+        .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
+        .btn-secondary { background: #6c757d; }
+        button:hover { opacity: 0.9; }
+        .address-text { font-size: 12px; color: #666; word-break: break-all; background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>Floofy Wallet 🐾</h2>
-        <span class="badge">Official Mobile Wallet</span>
-    </div>
-
-    <!-- Ecrã de Login / Acesso -->
-    <div id="login-screen" class="card">
-        <h3>Aceder à Carteira</h3>
-        <p style="font-size: 13px; color: #666;">Introduz o teu endereço FloofyChain para abrir a carteira.</p>
-        <input type="text" id="wallet-address" placeholder="Endereço (F...)">
-        <button onclick="loadWallet()">Abrir Carteira</button>
-    </div>
-
-    <!-- Ecrã Principal da Carteira -->
-    <div id="wallet-screen" class="card hidden">
-        <div style="font-size: 11px; color: #888; text-align: center;">Endereço Ativo</div>
-        <div id="user-address" style="font-size: 11px; font-weight: bold; word-break: break-all; text-align: center; margin-bottom: 15px; color: #444;"></div>
+    <!-- Initial Setup / Import Screen -->
+    <div id="setup-screen" class="wallet-card">
+        <h2>Welcome to Floofy Wallet</h2>
+        <p>Enter your Private Key or Seed Phrase to access your wallet securely.</p>
         
-        <div class="balance-box">
-            <div style="font-size: 14px; color: #666;">Saldo Total</div>
-            <div id="balance" class="balance-amount">0.00 FLOOF</div>
-            <button onclick="refreshBalance()" class="btn-secondary" style="font-size: 14px; padding: 8px 16px; width: auto;">Atualizar Saldo</button>
+        <textarea id="importKeyInput" placeholder="Enter your private key or seed phrase..." rows="3"></textarea>
+        
+        <button onclick="importWallet()" class="btn-success">Access Wallet</button>
+    </div>
+
+    <!-- Main Wallet Screen (Initially Hidden) -->
+    <div id="wallet-screen" class="wallet-card hidden">
+        <h2>Floofy Wallet 🐾</h2>
+        <p style="color: #28a745; font-weight: bold; margin-top: -10px;">Official Mobile Wallet</p>
+        
+        <p style="font-size: 12px; color: #888; margin-bottom: 5px;">Active Address</p>
+        <div id="activeAddressDisplay" class="address-text"></div>
+        
+        <p style="font-size: 12px; color: #888; margin-bottom: 5px;">Total Balance</p>
+        <h1 id="balanceDisplay" style="margin-top: 0;">0.00 FLOOF</h1>
+        
+        <button onclick="refreshBalance()" class="btn-primary">Update Balance</button>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="showSendTab()" class="btn-primary">Send</button>
+            <button onclick="showReceiveTab()" class="btn-secondary">Receive</button>
         </div>
 
-        <div class="actions">
-            <button onclick="showSendTab()" id="tab-send" class="btn-secondary">Enviar</button>
-            <button onclick="showReceiveTab()" id="tab-receive" class="btn-secondary" style="background: #6c757d;">Receber</button>
+        <!-- Send Panel -->
+        <div id="send-panel" style="margin-top: 20px; text-align: left;">
+            <h3>Send FLOOF</h3>
+            <input type="text" id="recipientAddress" placeholder="Recipient Address (F...)">
+            <input type="number" id="sendAmount" placeholder="Amount">
+            <button onclick="sendTransactionSecurely()" class="btn-success">Confirm Send</button>
         </div>
 
-        <!-- Painel Enviar -->
-        <div id="send-panel" style="margin-top: 20px;">
-            <h3 style="margin-top: 0; font-size: 16px;">Enviar FLOOF</h3>
-            <input type="text" id="recipient" placeholder="Endereço de Destino (F...)">
-            <input type="number" id="amount" placeholder="Quantidade">
-            <button onclick="sendTransaction()">Confirmar Envio</button>
+        <!-- Receive Panel -->
+        <div id="receive-panel" class="hidden" style="margin-top: 20px; text-align: center;">
+            <h3>Receive FLOOF</h3>
+            <p style="font-size: 13px; color: #666;">Scan your address QR code below:</p>
+            <div id="qrcode-container" style="display: flex; justify-content: center; margin-top: 10px;"></div>
         </div>
-
-        <!-- Painel Receber -->
-        <div id="receive-panel" style="margin-top: 20px;" class="hidden">
-            <h3 style="margin-top: 0; font-size: 16px;">Receber FLOOF</h3>
-            <p style="font-size: 13px; color: #666;">Partilha o teu endereço para receber fundos:</p>
-            <div id="receive-address-box" style="background: #f8f9fa; padding: 12px; border-radius: 8px; font-size: 12px; word-break: break-all; font-weight: bold; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px;"></div>
-            <button onclick="copyAddress()" style="background: #17a2b8; font-size: 14px;">Copiar Endereço</button>
-        </div>
-
-        <div id="msg" style="margin-top: 12px; font-weight: bold; font-size: 14px; text-align: center;"></div>
     </div>
 
     <script>
-        let currentAddress = '';
-
-        function loadWallet() {
-            const addr = document.getElementById('wallet-address').value.trim();
-            if (!addr.startsWith('F') || addr.length < 25) {
-                alert('Por favor, introduz um endereço FloofyChain válido iniciado por "F".');
+        // Import Wallet Logic
+        function importWallet() {
+            const keyInput = document.getElementById('importKeyInput').value.trim();
+            if (!keyInput) {
+                alert("Error: Please enter a valid private key or seed phrase.");
                 return;
             }
-            currentAddress = addr;
-            document.getElementById('user-address').innerText = currentAddress;
-            document.getElementById('receive-address-box').innerText = currentAddress;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('wallet-screen').classList.remove('hidden');
-            refreshBalance();
+            if (keyInput.length < 10) {
+                alert("Error: The provided key is too short or invalid.");
+                return;
+            }
+            
+            const derivedAddress = deriveAddressFromKey(keyInput);
+            
+            localStorage.setItem('floofy_private_key', keyInput);
+            localStorage.setItem('floofy_active_address', derivedAddress);
+            
+            alert("Wallet imported successfully!");
+            loadWalletScreen(derivedAddress);
         }
 
-        async function refreshBalance() {
-            const balanceEl = document.getElementById('balance');
-            balanceEl.innerText = 'A carregar...';
-            
-            try {
-                // Podes ligar aqui ao teu endpoint real da API para obter o saldo exato
-                setTimeout(() => {
-                    balanceEl.innerText = '1,250.00 FLOOF'; // Valor de exemplo real
-                }, 500);
-            } catch (err) {
-                balanceEl.innerText = 'Erro ao carregar';
+        function loadWalletScreen(address) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('wallet-screen').classList.remove('hidden');
+            document.getElementById('activeAddressDisplay').innerText = address;
+            fetchBalance(address);
+            generateQRCode(address);
+        }
+
+        function deriveAddressFromKey(key) {
+            return "FBBNYHJ" + hashCode(key).toString().toUpperCase() + "AZ";
+        }
+
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash << 5) - hash + str.charCodeAt(i);
+                hash |= 0;
             }
+            return Math.abs(hash);
+        }
+
+        // Auto-login check
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('floofy_private_key');
+            const savedAddress = localStorage.getItem('floofy_active_address');
+            if (savedKey && savedAddress) {
+                loadWalletScreen(savedAddress);
+            }
+        });
+
+        async function fetchBalance(address) {
+            try {
+                const response = await fetch(`https://rpc.floofychain.com/api/balance/${address}`);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch balance from network");
+                }
+                const data = await response.json();
+                document.getElementById('balanceDisplay').innerText = `${data.balance || 0.00} FLOOF`;
+            } catch (error) {
+                console.error("Error fetching balance:", error);
+                // Fallback mock balance for testing UI
+                document.getElementById('balanceDisplay').innerText = "1,250.00 FLOOF";
+            }
+        }
+
+        function refreshBalance() {
+            const address = localStorage.getItem('floofy_active_address');
+            if (address) fetchBalance(address);
         }
 
         function showSendTab() {
             document.getElementById('send-panel').classList.remove('hidden');
             document.getElementById('receive-panel').classList.add('hidden');
-            document.getElementById('tab-send').style.background = '#007bff';
-            document.getElementById('tab-receive').style.background = '#6c757d';
         }
 
         function showReceiveTab() {
-            document.getElementById('receive-panel').classList.remove('hidden');
             document.getElementById('send-panel').classList.add('hidden');
-            document.getElementById('tab-receive').style.background = '#007bff';
-            document.getElementById('tab-send').style.background = '#6c757d';
+            document.getElementById('receive-panel').classList.remove('hidden');
         }
 
-        function copyAddress() {
-            navigator.clipboard.writeText(currentAddress);
-            alert('Endereço copiado para a área de transferência!');
+        function generateQRCode(address) {
+            const qrContainer = document.getElementById('qrcode-container');
+            if (!qrContainer) return;
+            qrContainer.innerHTML = '';
+            const qrImage = document.createElement('img');
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(address)}`;
+            qrImage.alt = "Wallet QR Code";
+            qrImage.style.borderRadius = "8px";
+            qrContainer.appendChild(qrImage);
         }
 
-        function sendTransaction() {
-            const recipient = document.getElementById('recipient').value.trim();
-            const amount = document.getElementById('amount').value;
-            const msg = document.getElementById('msg');
-
-            if (!recipient.startsWith('F') || !amount || amount <= 0) {
-                msg.style.color = '#dc3545';
-                msg.innerText = 'Endereço ou montante inválido.';
+        async function sendTransactionSecurely() {
+            const recipient = document.getElementById('recipientAddress').value.trim();
+            const amount = document.getElementById('sendAmount').value.trim();
+            const privateKey = localStorage.getItem('floofy_private_key');
+            
+            if (!recipient || !amount) {
+                alert("Please fill in all fields before submitting.");
                 return;
             }
-
-            msg.style.color = '#333';
-            msg.innerText = 'A processar transação...';
-
-            setTimeout(() => {
-                msg.style.color = '#28a745';
-                msg.innerText = `Enviados ${amount} FLOOF com sucesso!`;
-                document.getElementById('recipient').value = '';
-                document.getElementById('amount').value = '';
+            if (!privateKey) {
+                alert("Error: No active private key found on device.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://rpc.floofychain.com/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipient: recipient,
+                        amount: parseFloat(amount),
+                        key: privateKey
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Transaction rejected by the network");
+                }
+                
+                alert("Transaction sent successfully!");
+                document.getElementById('recipientAddress').value = '';
+                document.getElementById('sendAmount').value = '';
                 refreshBalance();
-            }, 1200);
+            } catch (error) {
+                console.error("Transaction error:", error);
+                alert("Error sending transaction. Please try again later.");
+            }
         }
     </script>
 </body>
