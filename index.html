@@ -174,43 +174,41 @@
         }
 
         async function sendTransactionSecurely() {
-            const recipient = document.getElementById('recipientAddress').value.trim();
-            const amount = document.getElementById('sendAmount').value.trim();
-            const privateKey = localStorage.getItem('floofy_private_key');
-            
-            if (!recipient || !amount) {
-                alert("Please fill in all fields before submitting.");
-                return;
-            }
-            if (!privateKey) {
-                alert("Error: No active private key found on device.");
-                return;
-            }
-            
-            try {
-                const response = await fetch('https://rpc.floofychain.com/api/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        recipient: recipient,
-                        amount: parseFloat(amount),
-                        key: privateKey
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error("Transaction rejected by the network");
-                }
-                
-                alert("Transaction sent successfully!");
-                document.getElementById('recipientAddress').value = '';
-                document.getElementById('sendAmount').value = '';
-                refreshBalance();
-            } catch (error) {
-                console.error("Transaction error:", error);
-                alert("Error sending transaction. Please try again later.");
-            }
+    const recipient = document.getElementById('recipientAddress').value;
+    const amount = document.getElementById('sendAmount').value;
+
+    if (!recipient || !amount) {
+        alert("Please enter both the recipient address and the amount.");
+        return;
+    }
+
+    try {
+        // 1. Build and sign transaction locally on the phone
+        const signedHex = generateAndSignRawTransaction(recipient, amount); 
+
+        // 2. Send to the node/API supporting sendrawtransaction
+        const response = await fetch('https://your-public-node-or-rpc.com/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                jsonrpc: "1.0",
+                id: "floofy-wallet",
+                method: "sendrawtransaction",
+                params: [signedHex]
+            })
+        });
+
+        const data = await response.json();
+        if (data.result) {
+            alert("Transaction sent successfully! Hash: " + data.result);
+        } else {
+            throw new Error(data.error ? data.error.message : "Unknown error while sending.");
         }
+    } catch (error) {
+        console.error("Sending error:", error);
+        alert("Error processing transaction: " + error.message);
+    }
+}
     </script>
 </body>
 </html>
